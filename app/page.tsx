@@ -562,30 +562,63 @@ export default function Home() {
               {/* TABLE */}
               {activeTab==='table' && (
                 <div>
-                  <p style={{fontSize:'.8rem',color:'#9a8f7a',marginBottom:'16px',fontStyle:'italic'}}>Net pints — positive means pints coming your way.</p>
+                  <p style={{fontSize:'.8rem',color:'#9a8f7a',marginBottom:'16px',fontStyle:'italic'}}>
+                    Players ranked by combined goal difference of their teams across the entire tournament.
+                  </p>
                   <table>
                     <thead><tr>
-                      <th style={{width:'36px'}}>#</th><th>Player</th><th>Teams</th><th className="r">Net Pints 🍺</th>
+                      <th style={{width:'36px'}}>#</th>
+                      <th>Player</th>
+                      <th>Teams</th>
+                      <th className="r">GF</th>
+                      <th className="r">GA</th>
+                      <th className="r">GD</th>
                     </tr></thead>
                     <tbody>
-                      {players.map(p=>({...p,net:netFines[p.name]||0})).sort((a,b)=>b.net-a.net).map((p,i)=>(
-                        <tr key={p.id}>
-                          <td style={{fontFamily:"'Roboto Mono',monospace",fontSize:'.7rem',color:'#9a8f7a'}}>{i+1}</td>
-                          <td><strong>{p.name}</strong></td>
-                          <td style={{fontSize:'.78rem'}}>{p.teams.map(tn=>{const td=getTeamData(tn);return <span key={tn} style={{marginRight:'6px'}}>{td?.f} {tn}</span>})}</td>
-                          <td className="r">
-                            <span style={{display:'inline-flex',alignItems:'center',gap:'4px',
-                              background:p.net>0?'#e8f5ee':p.net<0?'#fdecea':'#f0ebe0',
-                              color:p.net>0?'#1a6b3a':p.net<0?'#c0392b':'#9a8f7a',
-                              border:`1px solid ${p.net>0?'#a0d8b0':p.net<0?'#e8c0c0':'#ddd5c0'}`,
-                              borderRadius:'6px',padding:'3px 10px',fontFamily:"'Roboto Mono',monospace",fontSize:'.82rem',fontWeight:700}}>
-                              {p.net>0?`+${p.net}`:p.net} 🍺
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
+                      {players.map(p => {
+                        const teamStats = p.teams.map(tn => {
+                          // Use group standings data if available, fall back to 0
+                          let gf = 0, ga = 0
+                          groups.forEach(group => {
+                            const entry = group.find(g => g.name === tn)
+                            if (entry) { gf = entry.gf; ga = entry.ga }
+                          })
+                          return { tn, gf, ga }
+                        })
+                        const totalGf = teamStats.reduce((s, t) => s + t.gf, 0)
+                        const totalGa = teamStats.reduce((s, t) => s + t.ga, 0)
+                        const totalGd = totalGf - totalGa
+                        return { ...p, totalGf, totalGa, totalGd }
+                      })
+                      .sort((a, b) => b.totalGd - a.totalGd || b.totalGf - a.totalGf)
+                      .map((p, i) => {
+                        const gdStr = p.totalGd > 0 ? `+${p.totalGd}` : String(p.totalGd)
+                        return (
+                          <tr key={p.id}>
+                            <td style={{fontFamily:"'Roboto Mono',monospace",fontSize:'.7rem',color:'#9a8f7a'}}>{i+1}</td>
+                            <td><strong>{p.name}</strong></td>
+                            <td style={{fontSize:'.78rem'}}>{p.teams.map(tn=>{const td=getTeamData(tn);return <span key={tn} style={{marginRight:'6px'}}>{td?.f} {tn}</span>})}</td>
+                            <td className="r">{p.totalGf}</td>
+                            <td className="r">{p.totalGa}</td>
+                            <td className="r">
+                              <span style={{display:'inline-flex',alignItems:'center',gap:'4px',
+                                background:p.totalGd>0?'#e8f5ee':p.totalGd<0?'#fdecea':'#f0ebe0',
+                                color:p.totalGd>0?'#1a6b3a':p.totalGd<0?'#c0392b':'#9a8f7a',
+                                border:`1px solid ${p.totalGd>0?'#a0d8b0':p.totalGd<0?'#e8c0c0':'#ddd5c0'}`,
+                                borderRadius:'6px',padding:'3px 10px',fontFamily:"'Roboto Mono',monospace",fontSize:'.82rem',fontWeight:700}}>
+                                {gdStr}
+                              </span>
+                            </td>
+                          </tr>
+                        )
+                      })}
                     </tbody>
                   </table>
+                  {groups.length === 0 && (
+                    <div style={{marginTop:'12px',fontSize:'.78rem',color:'#9a8f7a',fontStyle:'italic'}}>
+                      ⚠️ Load the Groups tab first to populate standings data.
+                    </div>
+                  )}
                 </div>
               )}
 
