@@ -77,8 +77,8 @@ export async function GET() {
   }
 
   function getOwner(teamName: string): string | null {
-    for (const p of players) {
-      if (p.teams.includes(teamName)) return p.name
+    for (const p of (players || [])) {
+        if (p.teams.includes(teamName)) return p.name
     }
     return null
   }

@@ -108,8 +108,8 @@ export async function GET() {
         detail: string,
         dedupeKey: string
       ) {
-        const fromPlayer = getOwner(offTeam, players)
-        const toPlayer = getOwner(oppTeam, players)
+        const fromPlayer = getOwner(offTeam, players || [])
+        const toPlayer = getOwner(oppTeam, players || [])
         if (!fromPlayer || !toPlayer || fromPlayer === toPlayer) return
  
         // Cap: 1 pint per game between any pair
